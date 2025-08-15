@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Box Game - Menu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: black;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        .menu {
+           text-align: center;
+            grid-template-columns: repeat(2, 1fr); /* 2 columns */
+            gap: 20px;
+            max-width: 400px;
+            margin: 50px auto;
+            margin-top: 10%;
+        }
+
+        .card {
+            background-color: #8B1E1E;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .play-btn {
+            background-color: yellow;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .play-btn:hover {
+            background-color: orange;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎮 Game Menu 🎮</h1>
+
+    <div class="menu">
+
+        <!-- Running Box Game -->
+        <div class="card">
+            <h2>🏃 Running Box Game 🏃</h2>
+            <p>Use ← to go left and → to go right</p>
+            <button class="play-btn" onclick="window.open('game.html', '_blank')">Play</button>
+        </div>
+
+        <!-- Car Racing Game -->
+        <!-- <div class="card">
+            <h2>🚗 Car Racing Game 🚗</h2>
+            <p>Use ↑ to accelerate and ↓ to brake</p>
+            <button class="play-btn" onclick="window.open('car.html', '_blank')">Play</button>
+        </div> -->
+
+        <!-- Target Shooter -->
+        <!-- <div class="card">
+            <h2>🎯 Target Shooter 🎯</h2>
+            <p>Click to shoot targets</p>
+            <button class="play-btn" onclick="window.open('target.html', '_blank')">Play</button>
+        </div> -->
+
+        <!-- Snake Game -->
+        <!-- <div class="card">
+            <h2>🐍 Snake Game 🐍</h2>
+            <p>Use arrow keys to move the snake</p>
+            <button class="play-btn" onclick="window.open('snake.html', '_blank')">Play</button>
+        </div> -->
+
+    </div>
+
+</body>
+</html>

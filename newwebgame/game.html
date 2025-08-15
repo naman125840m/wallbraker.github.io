@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Running Box Game - Infinite Mode</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: black; }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      display: none;
+    }
+    #menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      border-radius: 10px;
+      color: white;
+      text-align: center;
+      min-width: 260px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      background: gold;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover { background: orange; }
+    p.small { font-size: 14px; color: #ddd; margin: 6px 0 0; }
+    #home-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: crimson;
+      color: white;
+      display: none;
+    }
+    #menu-home-btn {
+      background: crimson;
+      color: white;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: 0</div>
+  <button id="home-btn">🏠 Home</button>
+
+  <div id="menu">
+    <h1>🏃 Running Box Game 🏃</h1>
+    <p id="menu-text">Press Play to Start</p>
+    <p id="high-score-text" class="small"></p>
+    <p class="small">Use ← and → to change lanes</p>
+    <button id="play-btn">Play</button>
+    <br>
+    <button id="menu-home-btn">Home</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script>
+    let scene, camera, renderer, box;
+    let doors = [], roads = [];
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem("highScore")) || 0;
+    let gameOver = false;
+    const lanes = [-2, 0, 2];
+    let currentLane = 1;
+    let gameStarted = false;
+
+    const highScoreText = document.getElementById("high-score-text");
+    highScoreText.textContent = "High Score: " + highScore;
+
+    function init() {
+      if (renderer && renderer.domElement && renderer.domElement.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambient);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+      dir.position.set(5, 10, 5);
+      scene.add(dir);
+
+      const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+      const boxMat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+      box = new THREE.Mesh(boxGeo, boxMat);
+      box.position.set(0, 0.5, 0);
+      scene.add(box);
+
+      initRoad();
+
+      camera.position.set(0, 3, -5);
+      camera.lookAt(box.position);
+
+      score = 0;
+      doors = [];
+      gameOver = false;
+      currentLane = 1;
+      box.position.set(0, 0.5, 0);
+      document.getElementById("score").textContent = "Score: " + score;
+    }
+
+    function createRoadSegment(zPos) {
+      const roadGeo = new THREE.PlaneGeometry(8, 50);
+      const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+      const road = new THREE.Mesh(roadGeo, roadMat);
+      road.rotation.x = -Math.PI / 2;
+      road.position.z = zPos;
+      scene.add(road);
+      roads.push(road);
+    }
+
+    function initRoad() {
+      roads = [];
+      for (let i = 0; i < 5; i++) {
+        createRoadSegment(i * 50);
+      }
+    }
+
+    function updateRoad() {
+      for (let road of roads) {
+        if (road.position.z + 25 < box.position.z - 25) {
+          road.position.z += roads.length * 50;
+        }
+      }
+    }
+
+    function spawnDoors(zPos) {
+      const yellowLane = Math.floor(Math.random() * lanes.length);
+      for (let i = 0; i < lanes.length; i++) {
+        const isBreakable = (i === yellowLane);
+        const g = new THREE.BoxGeometry(1, 2, 0.2);
+        const m = new THREE.MeshStandardMaterial({ color: isBreakable ? 0xFFFF00 : 0xFF0000 });
+        const d = new THREE.Mesh(g, m);
+        d.position.set(lanes[i], 1, zPos);
+        d.userData.breakable = isBreakable;
+        scene.add(d);
+        doors.push(d);
+      }
+    }
+
+    function checkCollision() {
+      const thresh = 0.9;
+      for (let i = doors.length - 1; i >= 0; i--) {
+        const door = doors[i];
+        if (Math.abs(box.position.z - door.position.z) < thresh &&
+            Math.abs(box.position.x - door.position.x) < 0.9) {
+          if (door.userData.breakable) {
+            scene.remove(door);
+            doors.splice(i, 1);
+            score++;
+            document.getElementById("score").textContent = "Score: " + score;
+          } else {
+            endGame(false);
+            return;
+          }
+        }
+      }
+    }
+
+    function endGame(win) {
+      gameOver = true;
+      gameStarted = false;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+      }
+      document.getElementById("menu").style.display = "block";
+      document.getElementById("score").style.display = "none";
+      document.getElementById("home-btn").style.display = "none";
+      document.getElementById("menu-home-btn").style.display = "inline-block";
+      highScoreText.textContent = "High Score: " + highScore;
+      document.getElementById("menu-text").textContent = win
+        ? `🎉 Congratulations! Score: ${score}`
+        : `💀 Game Over! Score: ${score}`;
+      document.getElementById("play-btn").textContent = "Restart";
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (!gameStarted) return;
+      if ((e.key === "ArrowLeft" || e.key === "Left") && currentLane > 0) {
+        currentLane--;
+        box.position.x = lanes[currentLane];
+      } else if ((e.key === "ArrowRight" || e.key === "Right") && currentLane < lanes.length - 1) {
+        currentLane++;
+        box.position.x = lanes[currentLane];
+      }
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (gameStarted && !gameOver) {
+        box.position.z += 0.12;
+        updateRoad();
+        checkCollision();
+        camera.position.z = box.position.z - 5;
+        camera.position.x = box.position.x;
+        camera.lookAt(box.position.x, box.position.y, box.position.z);
+        if (doors.length === 0 || Math.max(...doors.map(d => d.position.z)) < box.position.z + 18) {
+          spawnDoors(box.position.z + 30);
+        }
+      }
+      renderer.render(scene, camera);
+    }
+
+    document.getElementById("play-btn").addEventListener("click", () => {
+      init();
+      spawnDoors(15);
+      currentLane = 1;
+      box.position.x = lanes[currentLane];
+      box.position.z = 0;
+      gameStarted = true;
+      gameOver = false;
+      document.getElementById("menu").style.display = "none";
+      document.getElementById("score").style.display = "block";
+      document.getElementById("home-btn").style.display = "block";
+      document.getElementById("menu-home-btn").style.display = "none";
+    });
+
+    // Close tab on Home
+    document.getElementById("home-btn").addEventListener("click", () => {
+      window.close();
+    });
+
+    document.getElementById("menu-home-btn").addEventListener("click", () => {
+      window.close();
+    });
+
+    window.addEventListener("resize", () => {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
+</body>
+</html>

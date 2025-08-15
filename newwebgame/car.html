@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Car Racing Game</title>
+<style>
+    body { margin: 0; background: black; overflow: hidden; }
+    canvas { display: block; margin: auto; background: gray; }
+    #home-btn {
+        position: absolute; top: 10px; left: 10px;
+        padding: 8px 12px; font-size: 16px;
+        background: yellow; border: none; cursor: pointer;
+        border-radius: 5px;
+    }
+    #score {
+        position: absolute; top: 10px; right: 10px;
+        color: white; font-size: 20px;
+    }
+</style>
+</head>
+<body>
+<button id="home-btn">Home</button>
+<div id="score">Score: 0</div>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+let car = { x: 180, y: 500, width: 40, height: 80 };
+let obstacles = [];
+let score = 0;
+let gameOver = false;
+
+function drawCar() {
+    ctx.fillStyle = "red";
+    ctx.fillRect(car.x, car.y, car.width, car.height);
+}
+
+function drawObstacles() {
+    ctx.fillStyle = "black";
+    obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+}
+
+function updateObstacles() {
+    for (let i = 0; i < obstacles.length; i++) {
+        obstacles[i].y += 4;
+        if (obstacles[i].y > canvas.height) {
+            obstacles.splice(i, 1);
+            score++;
+            document.getElementById("score").textContent = "Score: " + score;
+            i--;
+        }
+        if (obstacles[i] &&
+            car.x < obstacles[i].x + obstacles[i].width &&
+            car.x + car.width > obstacles[i].x &&
+            car.y < obstacles[i].y + obstacles[i].height &&
+            car.y + car.height > obstacles[i].y) {
+            gameOver = true;
+        }
+    }
+    if (Math.random() < 0.02) {
+        obstacles.push({ x: Math.random() * 360, y: -40, width: 40, height: 40 });
+    }
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawCar();
+    drawObstacles();
+    updateObstacles();
+    if (!gameOver) requestAnimationFrame(gameLoop);
+    else alert("Game Over! Score: " + score);
+}
+
+document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft" && car.x > 0) car.x -= 20;
+    if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += 20;
+});
+
+document.getElementById("home-btn").onclick = () => window.close();
+
+gameLoop();
+</script>
+</body>
+</html>
