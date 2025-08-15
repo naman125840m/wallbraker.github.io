@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Running Box Game - Infinite Mode</title>
+  <title>Running Box Game - Mobile Friendly</title>
   <style>
     body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: black; }
     #score {
@@ -61,7 +61,7 @@
     <h1>🏃 Running Box Game 🏃</h1>
     <p id="menu-text">Press Play to Start</p>
     <p id="high-score-text" class="small"></p>
-    <p class="small">Use ← and → to change lanes</p>
+    <p class="small">Use ← → keys or swipe to move</p>
     <button id="play-btn">Play</button>
     <br>
     <button id="menu-home-btn">Home</button>
@@ -77,6 +77,8 @@
     const lanes = [-2, 0, 2];
     let currentLane = 1;
     let gameStarted = false;
+
+    let touchStartX = 0;
 
     const highScoreText = document.getElementById("high-score-text");
     highScoreText.textContent = "High Score: " + highScore;
@@ -130,16 +132,12 @@
 
     function initRoad() {
       roads = [];
-      for (let i = 0; i < 5; i++) {
-        createRoadSegment(i * 50);
-      }
+      for (let i = 0; i < 5; i++) createRoadSegment(i * 50);
     }
 
     function updateRoad() {
       for (let road of roads) {
-        if (road.position.z + 25 < box.position.z - 25) {
-          road.position.z += roads.length * 50;
-        }
+        if (road.position.z + 25 < box.position.z - 25) road.position.z += roads.length * 50;
       }
     }
 
@@ -194,6 +192,7 @@
       document.getElementById("play-btn").textContent = "Restart";
     }
 
+    // Keyboard controls
     document.addEventListener("keydown", (e) => {
       if (!gameStarted) return;
       if ((e.key === "ArrowLeft" || e.key === "Left") && currentLane > 0) {
@@ -203,6 +202,21 @@
         currentLane++;
         box.position.x = lanes[currentLane];
       }
+    });
+
+    // Mobile swipe controls
+    document.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+    });
+
+    document.addEventListener("touchend", (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchEndX - touchStartX;
+      if (!gameStarted) return;
+      const minSwipe = 30;
+      if (diff > minSwipe && currentLane > 0) currentLane--;
+      if (diff < -minSwipe && currentLane < lanes.length - 1) currentLane++;
+      box.position.x = lanes[currentLane];
     });
 
     function animate() {
@@ -235,14 +249,8 @@
       document.getElementById("menu-home-btn").style.display = "none";
     });
 
-    // Close tab on Home
-    document.getElementById("home-btn").addEventListener("click", () => {
-      window.close();
-    });
-
-    document.getElementById("menu-home-btn").addEventListener("click", () => {
-      window.close();
-    });
+    document.getElementById("home-btn").addEventListener("click", () => alert("Home button pressed!"));
+    document.getElementById("menu-home-btn").addEventListener("click", () => alert("Home button pressed!"));
 
     window.addEventListener("resize", () => {
       if (!camera || !renderer) return;
